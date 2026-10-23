@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaySync - Gentle Daily Planner for ADHD & Energy Recovery</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas Confetti for Gentle Dopamine Rewards -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        pastel: {
+                            bg: '#F8FAF8',
+                            card: '#FFFFFF',
+                            green: '#E2F1E7',
+                            greenDark: '#2D6A4F',
+                            blue: '#E0F2FE',
+                            blueDark: '#0284C7',
+                            coral: '#FFE4E1',
+                            coralDark: '#E11D48',
+                            purple: '#F3E8FF',
+                            purpleDark: '#7E22CE',
+                            text: '#2C3E35',
+                            subtext: '#64748B'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F4F7F5;
+            color: #2D3748;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.02);
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .smooth-transition {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[#F4F7F5] text-slate-800 pb-12">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-100 px-4 py-3 sm:px-8">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xl shadow-sm">
+                    🌱
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800 tracking-tight leading-none">DaySync</h1>
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">Gentle planner for mind & battery</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="triggerGentleEncouragement()" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl text-xs font-semibold smooth-transition">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    <span>Need Encouragement?</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main App Container -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 pt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- HEADER & BATTERY METER SECTION (Full Width in Main Grid or Span 12) -->
+        <section class="lg:col-span-12 bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-100">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                
+                <!-- Social Battery Info -->
+                <div class="flex-1 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="battery-charging" class="w-5 h-5 text-emerald-600"></i>
+                            <h2 class="font-bold text-slate-800 text-base sm:text-lg">Social Energy Battery</h2>
+                        </div>
+                        <span id="batteryPercentText" class="text-2xl font-extrabold text-emerald-600">65%</span>
+                    </div>
+
+                    <!-- Progress Bar Container -->
+                    <div class="w-full h-4 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/60 shadow-inner">
+                        <div id="batteryProgressBar" class="h-full bg-emerald-500 rounded-full smooth-transition" style="width: 65%;"></div>
+                    </div>
+
+                    <!-- Dynamic Battery Status Message -->
+                    <div class="flex items-center justify-between pt-1">
+                        <p id="batteryStatusMessage" class="text-xs sm:text-sm text-slate-600 font-medium flex items-center gap-1.5">
+                            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                            Moderate Energy — Balanced state! Remember to schedule a 30-min break.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Battery Level Controls (+ / - & Slider) -->
+                <div class="bg-slate-50/80 p-3 sm:p-4 rounded-2xl border border-slate-100 flex flex-col items-center justify-center gap-2 min-w-[220px]">
+                    <span class="text-xs font-semibold text-slate-500">Adjust Energy Level</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="adjustBattery(-10)" class="w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 flex items-center justify-center font-bold smooth-transition active:scale-95 shadow-sm">
+                            -
+                        </button>
+                        <input id="batterySlider" type="range" min="0" max="100" value="65" oninput="setBattery(this.value)" class="w-28 accent-emerald-600 cursor-pointer">
+                        <button onclick="adjustBattery(10)" class="w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 flex items-center justify-center font-bold smooth-transition active:scale-95 shadow-sm">
+                            +
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- LEFT COLUMN: MAIN TIMELINE & SCHEDULE (7 Cols on LG) -->
+        <section class="lg:col-span-7 space-y-6">
+            
+            <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-100 space-y-5">
+                
+                <!-- Section Title & Add Event Modal Trigger -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-5 h-5 text-indigo-500"></i>
+                            Today's Flow
+                        </h2>
+                        <p class="text-xs text-slate-500">Color-coded events with protected recharge buffers</p>
+                    </div>
+                    <button onclick="openAddEventModal()" class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow-sm smooth-transition active:scale-95">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Add Event</span>
+                    </button>
+                </div>
+
+                <!-- Burnout / Conflict Warning Banner (Hidden by default unless consecutive high social events) -->
+                <div id="burnoutWarningBanner" class="hidden p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-xs sm:text-sm flex items-start gap-3 smooth-transition">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5"></i>
+                    <div class="space-y-1">
+                        <p class="font-bold">Social Battery Conflict Detected!</p>
+                        <p class="text-rose-700">You have back-to-back <strong>High Social Drain</strong> events without a recharge buffer. Consider inserting a 20-30 min break.</p>
+                        <button onclick="autoAddRechargeBuffer()" class="mt-1 text-xs font-semibold text-rose-800 underline hover:text-rose-950">
+                            + Auto-insert 30m Recharge Time
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Timeline List -->
+                <div id="timelineContainer" class="space-y-3 custom-scrollbar max-h-[520px] overflow-y-auto pr-1">
+                    <!-- Dynamic Event Cards will render here -->
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- RIGHT COLUMN: ADHD MICRO-STEP BREAKDOWN WIDGET (5 Cols on LG) -->
+        <section class="lg:col-span-5 space-y-6">
+            
+            <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-100 space-y-5">
+                
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="check-square" class="w-5 h-5 text-purple-500"></i>
+                            Micro-Step Breakdown
+                        </h2>
+                        <p class="text-xs text-slate-500">Deconstruct daunting tasks into 10-minute bites</p>
+                    </div>
+                </div>
+
+                <!-- Quick Capture Input -->
+                <div class="flex items-center gap-2">
+                    <div class="relative flex-1">
+                        <input id="quickTaskInput" type="text" placeholder="Add major task (e.g., Biology Essay)..." 
+                            class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm rounded-xl pl-3 pr-8 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-400/50">
+                    </div>
+                    <button onclick="addMajorTask()" class="bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-2.5 rounded-xl text-xs font-semibold smooth-transition active:scale-95 flex-shrink-0">
+                        Add
+                    </button>
+                </div>
+
+                <!-- Major Tasks & Micro-steps List -->
+                <div id="microTaskContainer" class="space-y-4 max-h-[480px] overflow-y-auto custom-scrollbar pr-1">
+                    <!-- Dynamic micro-step tasks will be rendered here -->
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Encouragement Toast Modal / Card -->
+    <div id="encouragementToast" class="fixed bottom-6 right-6 max-w-sm bg-white border border-emerald-200 rounded-2xl shadow-xl p-4 hidden z-50 smooth-transition">
+        <div class="flex items-start gap-3">
+            <div class="p-2 bg-emerald-100 rounded-xl text-emerald-700">
+                <i data-lucide="heart" class="w-5 h-5"></i>
+            </div>
+            <div class="flex-1 space-y-1">
+                <h4 id="toastTitle" class="text-sm font-bold text-slate-800">You're doing great!</h4>
+                <p id="toastBody" class="text-xs text-slate-600">Taking micro-steps is progress. Rest is productive.</p>
+            </div>
+            <button onclick="closeToast()" class="text-slate-400 hover:text-slate-600 text-xs">✕</button>
+        </div>
+    </div>
+
+    <!-- Add Event Modal -->
+    <div id="addEventModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 border border-slate-100">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-base">Add New Event to Flow</h3>
+                <button onclick="closeAddEventModal()" class="text-slate-400 hover:text-slate-600 text-sm">✕</button>
+            </div>
+
+            <form id="eventForm" onsubmit="handleCreateEvent(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Event Title</label>
+                    <input id="eventTitle" type="text" required placeholder="e.g. Group Presentation or Self-Study" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-400 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Start Time</label>
+                        <input id="eventStartTime" type="time" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-400 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">End Time</label>
+                        <input id="eventEndTime" type="time" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-400 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Energy Impact Tag</label>
+                    <select id="eventEnergyTag" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-400 focus:outline-none">
+                        <option value="high"> High Social Drain (Coral/Red)</option>
+                        <option value="low"> Low Energy / Focused Work (Blue)</option>
+                        <option value="recharge"> Protected Recharge Time (Green Buffer)</option>
+                    </select>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeAddEventModal()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-200">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 shadow-sm">Save Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Application State
+        let currentBattery = 65;
+
+        let events = [
+            { id: 1, title: 'Psychology Group Seminar', startTime: '10:00', endTime: '11:30', tag: 'high' },
+            { id: 2, title: 'Protected Quiet Rest & Snack', startTime: '11:30', endTime: '12:00', tag: 'recharge' },
+            { id: 3, title: 'Library Deep Focus - Bio Notes', startTime: '13:00', endTime: '14:30', tag: 'low' },
+            { id: 4, title: 'Club Committee Meeting', startTime: '15:00', endTime: '16:00', tag: 'high' }
+        ];
+
+        let majorTasks = [
+            {
+                id: 101,
+                title: 'Study for Biology Exam',
+                expanded: true,
+                steps: [
+                    { id: 1, title: 'Open lecture slides on laptop', completed: true },
+                    { id: 2, title: 'Review Chapter 3 summary outline (10m)', completed: false },
+                    { id: 3, title: 'Write down 3 key concepts on index card', completed: false }
+                ]
+            },
+            {
+                id: 102,
+                title: 'Group Project Deck Outline',
+                expanded: false,
+                steps: [
+                    { id: 4, title: 'Brainstorm 2 slides ideas', completed: false },
+                    { id: 5, title: 'Send draft message to group chat', completed: false }
+                ]
+            }
+        ];
+
+        const positiveQuotes = [
+            "You are progressing at your own healthy speed.",
+            "Resting isn't quitting; it's refueling for what matters.",
+            "Small steps add up to big distances. Be proud of taking one!",
+            "Your worth isn't measured by continuous productivity."
+        ];
+
+        // Initialize icons and render on page load
+        window.onload = function() {
+            lucide.createIcons();
+            renderBattery();
+            renderTimeline();
+            renderMicroTasks();
+        };
+
+        // Battery Control Functions
+        function setBattery(val) {
+            currentBattery = Math.min(100, Math.max(0, parseInt(val)));
+            renderBattery();
+        }
+
+        function adjustBattery(delta) {
+            setBattery(currentBattery + delta);
+        }
+
+        function renderBattery() {
+            const bar = document.getElementById('batteryProgressBar');
+            const percentText = document.getElementById('batteryPercentText');
+            const statusMsg = document.getElementById('batteryStatusMessage');
+            const slider = document.getElementById('batterySlider');
+
+            percentText.innerText = `${currentBattery}%`;
+            bar.style.width = `${currentBattery}%`;
+            slider.value = currentBattery;
+
+            // Update Color and Status text based on level
+            if (currentBattery > 70) {
+                bar.className = 'h-full bg-emerald-500 rounded-full smooth-transition';
+                percentText.className = 'text-2xl font-extrabold text-emerald-600';
+                statusMsg.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span> High Energy — Great time for social activities or deep work.`;
+            } else if (currentBattery >= 40) {
+                bar.className = 'h-full bg-amber-400 rounded-full smooth-transition';
+                percentText.className = 'text-2xl font-extrabold text-amber-600';
+                statusMsg.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-amber-400"></span> Moderate Energy — Steady state. Balance high-social events with quiet breaks.`;
+            } else {
+                bar.className = 'h-full bg-rose-500 rounded-full smooth-transition';
+                percentText.className = 'text-2xl font-extrabold text-rose-600';
+                statusMsg.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-rose-500"></span> Low Energy — Protect your time! Recharge mode highly suggested.`;
+            }
+        }
+
+        // Timeline & Event Management
+        function renderTimeline() {
+            const container = document.getElementById('timelineContainer');
+            container.innerHTML = '';
+
+            // Sort events by startTime
+            events.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+            let hasConflict = checkForSocialConflict();
+
+            // Toggle warning banner
+            const warningBanner = document.getElementById('burnoutWarningBanner');
+            if (hasConflict) {
+                warningBanner.classList.remove('hidden');
+            } else {
+                warningBanner.classList.add('hidden');
+            }
+
+            events.forEach((evt) => {
+                let badgeClass = '';
+                let borderClass = '';
+                let tagLabel = '';
+                let tagIcon = '';
+
+                if (evt.tag === 'high') {
+                    badgeClass = 'bg-rose-100 text-rose-800';
+                    borderClass = 'border-l-4 border-l-rose-400';
+                    tagLabel = 'High Social Drain';
+                    tagIcon = 'users';
+                } else if (evt.tag === 'low') {
+                    badgeClass = 'bg-sky-100 text-sky-800';
+                    borderClass = 'border-l-4 border-l-sky-400';
+                    tagLabel = 'Low Energy / Focus';
+                    tagIcon = 'brain';
+                } else {
+                    badgeClass = 'bg-emerald-100 text-emerald-800';
+                    borderClass = 'border-l-4 border-l-emerald-400';
+                    tagLabel = 'Protected Recharge';
+                    tagIcon = 'shield';
+                }
+
+                const card = document.createElement('div');
+                card.className = `p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-2xl border border-slate-200/60 ${borderClass} flex items-center justify-between gap-3 smooth-transition`;
+
+                card.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-semibold text-slate-500">${evt.startTime} - ${evt.endTime}</span>
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${badgeClass} inline-flex items-center gap-1">
+                                <i data-lucide="${tagIcon}" class="w-3 h-3"></i>
+                                ${tagLabel}
+                            </span>
+                        </div>
+                        <h4 class="text-sm font-bold text-slate-800">${evt.title}</h4>
+                    </div>
+                    <button onclick="deleteEvent(${evt.id})" class="text-slate-300 hover:text-rose-500 p-1.5 rounded-lg smooth-transition">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                `;
+
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        // Detect if 2 "high" social drain events exist back-to-back without a "recharge" buffer in between
+        function checkForSocialConflict() {
+            for (let i = 0; i < events.length - 1; i++) {
+                if (events[i].tag === 'high' && events[i+1].tag === 'high') {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function autoAddRechargeBuffer() {
+            // Find index of consecutive high events
+            for (let i = 0; i < events.length - 1; i++) {
+                if (events[i].tag === 'high' && events[i+1].tag === 'high') {
+                    const newBuffer = {
+                        id: Date.now(),
+                        title: 'Auto-Buffer: Calm Quiet Walk/Rest',
+                        startTime: events[i].endTime,
+                        endTime: events[i+1].startTime !== events[i].endTime ? events[i+1].startTime : '12:30',
+                        tag: 'recharge'
+                    };
+                    events.splice(i + 1, 0, newBuffer);
+                    break;
+                }
+            }
+            triggerConfetti();
+            renderTimeline();
+        }
+
+        function deleteEvent(id) {
+            events = events.filter(e => e.id !== id);
+            renderTimeline();
+        }
+
+        // Add Event Modal Handlers
+        function openAddEventModal() {
+            document.getElementById('addEventModal').classList.remove('hidden');
+        }
+
+        function closeAddEventModal() {
+            document.getElementById('addEventModal').classList.add('hidden');
+        }
+
+        function handleCreateEvent(e) {
+            e.preventDefault();
+            const title = document.getElementById('eventTitle').value;
+            const startTime = document.getElementById('eventStartTime').value;
+            const endTime = document.getElementById('eventEndTime').value;
+            const tag = document.getElementById('eventEnergyTag').value;
+
+            events.push({
+                id: Date.now(),
+                title,
+                startTime,
+                endTime,
+                tag
+            });
+
+            closeAddEventModal();
+            document.getElementById('eventForm').reset();
+            renderTimeline();
+        }
+
+        // ADHD Micro-Task Breakdown Logic
+        function renderMicroTasks() {
+            const container = document.getElementById('microTaskContainer');
+            container.innerHTML = '';
+
+            majorTasks.forEach((task) => {
+                const taskCard = document.createElement('div');
+                taskCard.className = 'bg-slate-50/80 rounded-2xl border border-slate-200/60 p-3.5 space-y-3';
+
+                const completedCount = task.steps.filter(s => s.completed).length;
+                const totalCount = task.steps.length;
+
+                taskCard.innerHTML = `
+                    <div class="flex items-center justify-between cursor-pointer" onclick="toggleTaskExpand(${task.id})">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="${task.expanded ? 'chevron-down' : 'chevron-right'}" class="w-4 h-4 text-slate-400"></i>
+                            <h4 class="text-xs sm:text-sm font-bold text-slate-800">${task.title}</h4>
+                        </div>
+                        <span class="text-[10px] font-semibold bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                            ${completedCount}/${totalCount} Done
+                        </span>
+                    </div>
+
+                    ${task.expanded ? `
+                        <div class="space-y-2 pt-1 border-t border-slate-200/40 pl-2">
+                            ${task.steps.map(step => `
+                                <div class="flex items-center justify-between text-xs group">
+                                    <label class="flex items-center gap-2 cursor-pointer ${step.completed ? 'line-through text-slate-400' : 'text-slate-700'}">
+                                        <input type="checkbox" ${step.completed ? 'checked' : ''} 
+                                            onchange="toggleMicroStep(${task.id}, ${step.id})" 
+                                            class="rounded text-purple-600 focus:ring-purple-400 w-4 h-4 cursor-pointer">
+                                        <span>${step.title}</span>
+                                    </label>
+                                    <button onclick="deleteMicroStep(${task.id}, ${step.id})" class="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 smooth-transition">
+                                        ✕
+                                    </button>
+                                </div>
+                            `).join('')}
+
+                            <!-- Add Sub-step field -->
+                            <div class="flex items-center gap-2 pt-2">
+                                <input type="text" id="newStepInput-${task.id}" placeholder="Add 10m micro-step..." 
+                                    class="w-full bg-white border border-slate-200 text-slate-800 text-[11px] rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-400">
+                                <button onclick="addMicroStep(${task.id})" class="text-[11px] bg-purple-50 text-purple-700 hover:bg-purple-100 font-semibold px-2 py-1 rounded-lg">
+                                    +Add
+                                </button>
+                            </div>
+                        </div>
+                    ` : ''}
+                `;
+
+                container.appendChild(taskCard);
+            });
+
+            lucide.createIcons();
+        }
+
+        function toggleTaskExpand(taskId) {
+            const task = majorTasks.find(t => t.id === taskId);
+            if (task) {
+                task.expanded = !task.expanded;
+                renderMicroTasks();
+            }
+        }
+
+        function addMajorTask() {
+            const input = document.getElementById('quickTaskInput');
+            const title = input.value.trim();
+            if (!title) return;
+
+            majorTasks.unshift({
+                id: Date.now(),
+                title,
+                expanded: true,
+                steps: [
+                    { id: Date.now() + 1, title: 'Break task into first 10-min action', completed: false }
+                ]
+            });
+
+            input.value = '';
+            renderMicroTasks();
+        }
+
+        function addMicroStep(taskId) {
+            const input = document.getElementById(`newStepInput-${taskId}`);
+            const title = input.value.trim();
+            if (!title) return;
+
+            const task = majorTasks.find(t => t.id === taskId);
+            if (task) {
+                task.steps.push({
+                    id: Date.now(),
+                    title,
+                    completed: false
+                });
+                renderMicroTasks();
+            }
+        }
+
+        function toggleMicroStep(taskId, stepId) {
+            const task = majorTasks.find(t => t.id === taskId);
+            if (task) {
+                const step = task.steps.find(s => s.id === stepId);
+                if (step) {
+                    step.completed = !step.completed;
+                    if (step.completed) {
+                        triggerConfetti();
+                        showToast("Micro-step Complete!", "Awesome progress! Small steps fuel momentum.");
+                    }
+                    renderMicroTasks();
+                }
+            }
+        }
+
+        function deleteMicroStep(taskId, stepId) {
+            const task = majorTasks.find(t => t.id === taskId);
+            if (task) {
+                task.steps = task.steps.filter(s => s.id !== stepId);
+                renderMicroTasks();
+            }
+        }
+
+        // Dopamine Reward Confetti Animation
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 40,
+                    spread: 60,
+                    origin: { y: 0.8 },
+                    colors: ['#A7F3D0', '#BAE6FD', '#DDD6FE']
+                });
+            }
+        }
+
+        // Encouragement & Toast Controls
+        function triggerGentleEncouragement() {
+            const randomQuote = positiveQuotes[Math.floor(Math.random() * positiveQuotes.length)];
+            showToast("Gentle Reminder", randomQuote);
+            triggerConfetti();
+        }
+
+        function showToast(title, body) {
+            const toast = document.getElementById('encouragementToast');
+            document.getElementById('toastTitle').innerText = title;
+            document.getElementById('toastBody').innerText = body;
+            toast.classList.remove('hidden');
+
+            setTimeout(() => {
+                closeToast();
+            }, 4500);
+        }
+
+        function closeToast() {
+            document.getElementById('encouragementToast').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
